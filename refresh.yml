@@ -1,0 +1,23 @@
+name: Refresh Wikipedia candidate data
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '30 6 * * 1,4'
+permissions:
+  contents: write
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install -r requirements.txt
+      - run: python update.py
+      - name: Commit review files
+        run: |
+          git config user.name 'football-bowls-bot'
+          git config user.email 'football-bowls-bot@users.noreply.github.com'
+          git add output/
+          git diff --cached --quiet || (git commit -m 'Refresh Wikipedia appearance candidates' && git push)
