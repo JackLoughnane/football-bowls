@@ -40,6 +40,13 @@ def main():
   match=match.set_index(["player_id","game_id"]).drop(index=conflicting_keys.index).reset_index()
  else:
   pd.DataFrame(columns=match.columns).to_csv(D/"ambiguous_player_game_clubs_REVIEW.csv",index=False)
+ # Source also contains bench listings and a pseudo-player OWNGOAL.
+ # False start + time_on=0 is not an appearance; filter before aggregation.
+ nonappearance=match.loc[(match["start"].astype(str).str.lower()=="false") & (pd.to_numeric(match["time_on"],errors="coerce")==0)].copy()
+ nonappearance.to_csv(D/"nonplaying_bench_records_EXCLUDED.csv",index=False)
+ pseudo=match.loc[match["player_id"]=="OWNGOAL"].copy()
+ pseudo.to_csv(D/"pseudo_player_records_EXCLUDED.csv",index=False)
+ match=match.loc[~match.index.isin(nonappearance.index) & ~match.index.isin(pseudo.index)].copy()
  match=match.drop_duplicates(["player_id","game_id"])
  season=match.groupby(["player_id","team","season"],as_index=False).agg(appearances=("game_id","nunique"))
  season=season.merge(players[["player_id","first_name","last_name","birth_date"]],on="player_id",validate="many_to_one")
@@ -60,5 +67,5 @@ def main():
    for _,h in hits.iterrows():
     rows.append(dict(season=s.season,club=s.club,source_player_name=s.source_player_name,candidate_epldata_id=h.player_id,candidate_name=h["name"],candidate_birth_date=h.birth_date,match_method="exact_normalized_name_only",verification_status="candidate_not_verified",import_ready=False))
   pd.DataFrame(rows,columns=["season","club","source_player_name","candidate_epldata_id","candidate_name","candidate_birth_date","match_method","verification_status","import_ready"]).to_csv(D/"2024_25_identity_candidates_UNVERIFIED.csv",index=False)
- print(json.dumps({"club_registration_disagreements":len(disagreements),"duplicate_player_game_rows":len(duplicate_records),"ambiguous_player_game_groups_excluded":len(conflicting_keys),"players":len(players),"historical_player_club_seasons":len(season),"historical_career_club_totals":len(career),"note":"Unverified community dataset; not approved for Supabase import."}))
+ print(json.dumps({"club_registration_disagreements":len(disagreements),"nonplaying_bench_rows_excluded":len(nonappearance),"pseudo_player_rows_excluded":len(pseudo),"duplicate_player_game_rows":len(duplicate_records),"ambiguous_player_game_groups_excluded":len(conflicting_keys),"players":len(players),"historical_player_club_seasons":len(season),"historical_career_club_totals":len(career),"note":"Unverified community dataset; not approved for Supabase import."}))
 if __name__=="__main__":main()
