@@ -16,7 +16,10 @@ def main():
  # Use actual match participations, never squad registration or unused substitute.
  match=pg.merge(pt[["player_team_id","player_id","team"]],on="player_team_id",validate="many_to_one")
  match=match.merge(gt[["team_game_id","game_id","team"]],on="team_game_id",suffixes=("","_match"),validate="many_to_one")
- assert (match.team==match.team_match).all(),"Player stint and match club disagree"
+ # Player-team club may differ from match-side club: audit, do not silently discard.
+ disagreements=match.loc[match.team!=match.team_match].copy()
+ disagreements.to_csv(D/"player_team_match_club_disagreements_REVIEW.csv",index=False)
+ match["team"]=match["team_match"]
  match=match.merge(games[["game_id","game_date"]],on="game_id",validate="many_to_one")
  match["date"]=pd.to_datetime(match.game_date,errors="coerce")
  assert match.date.notna().all()
@@ -43,5 +46,5 @@ def main():
    for _,h in hits.iterrows():
     rows.append(dict(season=s.season,club=s.club,source_player_name=s.source_player_name,candidate_epldata_id=h.player_id,candidate_name=h["name"],candidate_birth_date=h.birth_date,match_method="exact_normalized_name_only",verification_status="candidate_not_verified",import_ready=False))
   pd.DataFrame(rows,columns=["season","club","source_player_name","candidate_epldata_id","candidate_name","candidate_birth_date","match_method","verification_status","import_ready"]).to_csv(D/"2024_25_identity_candidates_UNVERIFIED.csv",index=False)
- print(json.dumps({"players":len(players),"historical_player_club_seasons":len(season),"historical_career_club_totals":len(career),"note":"Unverified community dataset; not approved for Supabase import."}))
+ print(json.dumps({"club_registration_disagreements":len(disagreements),"players":len(players),"historical_player_club_seasons":len(season),"historical_career_club_totals":len(career),"note":"Unverified community dataset; not approved for Supabase import."}))
 if __name__=="__main__":main()
