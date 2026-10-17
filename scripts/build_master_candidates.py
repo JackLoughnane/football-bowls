@@ -17,6 +17,8 @@ import urllib.request
 SOURCE_REPO = "Samoilov2004/premier_league_dataset"
 API = "https://api.github.com/repos/" + SOURCE_REPO
 HEADERS = {"User-Agent":"FootballBowlsResearch/0.1", "Accept":"application/vnd.github+json"}
+if os.environ.get("GH_TOKEN"):
+    HEADERS["Authorization"] = "Bearer " + os.environ["GH_TOKEN"]
 OUT = pathlib.Path("output/master_list")
 
 def fetch(url):
