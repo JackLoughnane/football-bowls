@@ -10,7 +10,7 @@ def main():
  pt=pd.read_csv(D/"player_team.csv",dtype=str).fillna("")
  pg=pd.read_csv(D/"player_game.csv",dtype=str).fillna("")
  gt=pd.read_csv(D/"game_team.csv",dtype=str).fillna("")
- games=pd.read_csv(D/"game.csv",dtype=str).fillna("")
+ games=pd.read_csv(D/"games.csv",dtype=str).fillna("")
  assert players.player_id.is_unique,"Player IDs not unique"
  assert pg.player_game_id.is_unique,"Player-game IDs not unique"
  # Use actual match participations, never squad registration or unused substitute.
