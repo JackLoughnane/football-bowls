@@ -1,27 +1,39 @@
-# Football Bowls
+# Football Bowls — playable prototype
 
-Historical Premier League player appearance data infrastructure.
+## Play locally
+Open `index.html` in a browser and choose **Pass & play**. No server or installation needed.
 
-## Current status
-The initial database schema and validation workflow are installed. **No complete player list or verified appearance totals have been imported yet.** The existing game's synthetic figures must not be treated as real.
+## Enable online rooms
+1. Create a Supabase project at supabase.com.
+2. Run `supabase.sql` in the project's SQL editor.
+3. Host `index.html` on a static host (Netlify, Vercel, GitHub Pages) with HTTPS.
+4. On each device, choose **Play online** and enter the **same** Supabase project URL and publishable/anon key. Do **not** enter a service-role/secret key.
+5. Player 1 creates a room and shares the code/link. Player 2 joins using that code.
 
-## Supabase setup
-In the existing Supabase project, open SQL Editor and run [sql/001_player_database.sql](sql/001_player_database.sql). It adds `fb_clubs`, `fb_players`, `fb_player_club_appearances`, and `fb_data_updates` without changing the multiplayer room table.
+Online state is synchronised using REST polling about every 1.8 seconds. Both players must remain connected. The prototype does not include accounts, reconnection guarantees, server-side anti-cheat, secure private rooms, or automated room cleanup.
 
-The new player tables allow public reads but no public writes under row-level security. Do not commit database secrets to GitHub.
+## IMPORTANT: data accuracy
+Bundled appearance totals come from the provisional epldata 1992/93–2017/18 Premier League match extract, not synthetic placeholders. These are not necessarily complete career totals, especially for players active after 2017/18. Replace `DATA` in `index.html` with verified, licensed club-specific Premier League appearance totals before publishing as a trivia game. Real records must aggregate all spells at a club and include substitute appearances. Prefer a fixed season-end snapshot.
 
-## Validation
-Edit [data/appearance_candidates.csv](data/appearance_candidates.csv) using these fields:
+## IMPORTANT: security
+The SQL policies intentionally permit public reads/writes to simplify prototyping. Anyone with the project URL and anon key can tamper with game rooms. **Do not deploy these policies for a public competitive game.** For production, move game rules, player eligibility, room authorization, turn enforcement and appearance checks into trusted server-side functions and restrict table permissions. Add rate limits, authentication/guest tokens, input validation, expiration and replay protection.
 
-`player_id,player_name,club_id,club_name,appearances,source_url,verification_status`
+## Rules
+Two players alternate 3 guesses each. Each name may only be used once per round. Closest individual guess to the target wins 1 point; equal distance is a draw. After the chosen number of rounds, most points wins. Invalid players are prevented by autocomplete.
 
-Run `python scripts/validate_appearances.py data/appearance_candidates.csv`. Outputs are in `output/`. A row marked `verified` passes only structural checks; the script **does not independently establish that the football statistic is correct**.
+## Known prototype limitations
+- Provisional historical match data, not fully audited, with deterministic target generation.
+- No live licensed data feed.
+- Online mode requires your own Supabase configuration and hosting.
+- Race protection is best-effort optimistic version checking, not authoritative server-side validation.
+- The bowls pitch clips guesses far outside the target range for readability.
 
-The [GitHub Actions workflow](.github/workflows/validate-appearance-data.yml) runs validation on Mondays and Thursdays and on changes to the candidate data. It **does not yet scrape Wikipedia, update active-player totals, or write to Supabase**.
-
-## Next steps
-1. Identify and deduplicate every historical Premier League player with a confirmed match appearance.
-2. Establish accurate Premier League-only appearances by player and club.
-3. Add independent cross-source validation and exception reports.
-4. Add authenticated Supabase import and scheduled refresh.
-5. Update Football Bowls to load a frozen verified dataset snapshot.
+## Updated scoring rules (v2)
+- Each player has three turns per round.
+- A surviving bowl scores one point if its distance from the target is strictly less than the closest surviving bowl of the opposing player. This can award 0–3 placement points to a player.
+- An exact target earns an additional bonus point for each surviving exact bowl.
+- If a later guess has the same appearance count as an earlier surviving opponent guess, the earlier guess is knocked out and cannot score. This applies regardless of whether the later guess is closer to the target (they are equally distant).
+- Duplicate player names are not allowed within a round, but distinct players with the same appearance count are allowed.
+- Tied distances do not count as closer. If an opponent has no surviving bowls, every surviving bowl counts as closer.
+- The match lasts the configured number of rounds; highest cumulative points wins. Draws are possible.
+- These rules apply to local play and the client-side online prototype. Online play still needs server-side authoritative validation before public competitive release.
