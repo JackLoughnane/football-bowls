@@ -1,0 +1,26 @@
+name: Validate appearance data
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 7 * * 1,4'
+  push:
+    paths:
+      - 'data/**'
+      - 'scripts/validate_appearances.py'
+      - '.github/workflows/validate-appearance-data.yml'
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python scripts/validate_appearances.py data/appearance_candidates.csv
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: validation-output
+          path: output/
