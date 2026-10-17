@@ -1,0 +1,28 @@
+name: Reconcile 2024-25 PL player appearances
+on:
+  workflow_dispatch:
+jobs:
+  reconcile:
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Download official extracted CSV from prior successful run
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p input
+          gh run download 39069800160 -n official-2024-25-handbook-extraction-review -D input
+          python scripts/parse_2024_25_handbook.py --input-dir input --output input/official_2024_25.csv
+      - name: Reconcile against independent dataset
+        run: python scripts/reconcile_2024_25.py --official input/official_2024_25.csv
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: 2024-25-reconciliation-review
+          path: output/season_2024_25/reconciliation/
