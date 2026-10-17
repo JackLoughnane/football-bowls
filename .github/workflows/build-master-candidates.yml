@@ -13,6 +13,8 @@ jobs:
         with:
           python-version: '3.12'
       - name: Download historical squad candidates
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: python scripts/build_master_candidates.py
       - name: Upload candidate list and errors
         if: always()
