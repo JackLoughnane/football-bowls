@@ -1,0 +1,23 @@
+name: Build historical player candidates
+on:
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Download historical squad candidates
+        run: python scripts/build_master_candidates.py
+      - name: Upload candidate list and errors
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: premier-league-candidate-master-list
+          path: output/master_list/
+          retention-days: 30
