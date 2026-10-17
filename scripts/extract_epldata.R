@@ -3,7 +3,7 @@
 # The repository's README warns that some historical data may contain errors.
 dir.create("output/epldata", recursive=TRUE, showWarnings=FALSE)
 base <- "https://raw.githubusercontent.com/pssguy/epldata/master/data/"
-tables <- c("players","player_team","player_game","game_team","game")
+tables <- c("players","player_team","player_game","game_team","games")
 for (tbl in tables) {
   dest <- tempfile(fileext=".rda")
   download.file(paste0(base,tbl,".rda"),dest,mode="wb",quiet=TRUE)
