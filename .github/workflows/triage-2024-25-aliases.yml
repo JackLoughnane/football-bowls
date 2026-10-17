@@ -1,0 +1,29 @@
+name: Triage 2024-25 player name aliases
+on:
+  workflow_dispatch:
+jobs:
+  alias_review:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Retrieve prior review artifact
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p input
+          gh run download 39070680156 -n 2024-25-reconciliation-review -D input
+          gh run download 39069800160 -n official-2024-25-handbook-extraction-review -D input
+          python scripts/parse_2024_25_handbook.py --input-dir input --output input/official.csv
+          python scripts/triage_2024_25_unmatched.py --official input/official.csv --comparison input/row_comparison.csv --output input/triage
+      - name: Generate identity candidates
+        run: python scripts/suggest_2024_25_aliases.py --queue input/triage/unmatched_review_queue.csv
+      - uses: actions/upload-artifact@v4
+        with:
+          name: 2024-25-name-alias-review
+          path: output/season_2024_25/alias_candidates.csv
