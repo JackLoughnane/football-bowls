@@ -1,0 +1,31 @@
+name: Update 2026-27 Premier League appearances
+on:
+  schedule:
+    - cron: '17 8 * * 1'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: football-bowls-data-update
+  cancel-in-progress: false
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Refresh season appearances
+        run: python scripts/update_2026_27.py
+      - name: Commit checked updates
+        run: |
+          git config user.name "football-bowls-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html data/season_2026-27_applied.json data/season_2026-27_review.json
+          if ! git diff --cached --quiet; then
+            git commit -m "Update 2026/27 Premier League appearance counts"
+            git push
+          fi
